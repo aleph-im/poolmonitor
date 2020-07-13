@@ -17,7 +17,11 @@ Note: This skeleton file can be safely removed if not needed!
 
 import argparse
 import sys
+import os
 import logging
+from .settings import config
+import hiyapyco
+from pathlib import Path
 
 from poolmonitor import __version__
 
@@ -26,22 +30,6 @@ __copyright__ = "Moshe Malawach"
 __license__ = "mit"
 
 _logger = logging.getLogger(__name__)
-
-
-def fib(n):
-    """Fibonacci example function
-
-    Args:
-      n (int): integer
-
-    Returns:
-      int: n-th Fibonacci number
-    """
-    assert n > 0
-    a, b = 1, 1
-    for i in range(n-1):
-        a, b = b, a+b
-    return a
 
 
 def parse_args(args):
@@ -54,16 +42,12 @@ def parse_args(args):
       :obj:`argparse.Namespace`: command line parameters namespace
     """
     parser = argparse.ArgumentParser(
-        description="Just a Fibonacci demonstration")
+        description="Pool monitoring tool")
     parser.add_argument(
         "--version",
         action="version",
         version="poolmonitor {ver}".format(ver=__version__))
-    parser.add_argument(
-        dest="n",
-        help="n-th Fibonacci number",
-        type=int,
-        metavar="INT")
+    parser.add_argument('-c', '--config', action="store", dest="config_file")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -100,9 +84,33 @@ def main(args):
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
-    _logger.debug("Starting crazy calculations...")
-    print("The {}-th Fibonacci number is {}".format(args.n, fib(args.n)))
-    _logger.info("Script ends here")
+
+    
+    default_config_file = os.path.join(Path(__file__).resolve().parent, 'config_default.yaml')
+    if args.config_file:
+        config.update(hiyapyco.load(default_config_file, args.config_file))
+    else:
+        config.update(hiyapyco.load(default_config_file))
+
+    print(config)
+
+    from .pools import set_pools, process_pool_history, get_pool_weight
+    set_pools()
+
+    print(config)
+    pool_weights = {
+        pool['address'] : get_pool_weight(pool) for pool in config['pools']
+    }
+
+    pool_weights = {
+        a: pw / sum(pool_weights.values()) for a, pw in pool_weights.items()
+    }
+    print(pool_weights)
+
+    per_block = config['reward_per_block']
+
+    for pool in config['pools']:
+        process_pool_history(pool, per_block*pool_weights[pool['address']])
 
 
 def run():
