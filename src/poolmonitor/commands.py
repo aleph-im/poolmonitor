@@ -20,6 +20,8 @@ import sys
 import os
 import logging
 from .settings import config
+from .aleph import create_distribution_tx_post
+        
 import hiyapyco
 from pathlib import Path
 
@@ -62,6 +64,26 @@ def parse_args(args):
         help="set loglevel to DEBUG",
         action="store_const",
         const=logging.DEBUG)
+    parser.add_argument(
+        "-a",
+        "--act",
+        dest="act",
+        help="Do actual bqtch transfer",
+        action="store_true")
+    parser.add_argument(
+        "-s",
+        "--start-height",
+        dest="start_height",
+        help="Starting height",
+        type=int,
+        default=0)
+    parser.add_argument(
+        "-e",
+        "--end-height",
+        dest="end_height",
+        help="Ending height",
+        type=int,
+        default=-1)
     return parser.parse_args(args)
 
 
@@ -92,12 +114,10 @@ def main(args):
     else:
         config.update(hiyapyco.load(default_config_file))
 
-    print(config)
-
-    from .pools import set_pools, process_pool_history, get_pool_weight
+    from .uniswap import set_pools, process_pool_history, get_pool_weight
+    from .ethereum import get_web3, transfer_tokens
     set_pools()
 
-    print(config)
     pool_weights = {
         pool['address'] : get_pool_weight(pool) for pool in config['pools']
     }
@@ -105,12 +125,49 @@ def main(args):
     pool_weights = {
         a: pw / sum(pool_weights.values()) for a, pw in pool_weights.items()
     }
-    print(pool_weights)
 
     per_block = config['reward_per_block']
 
+    distribution = dict(
+        incentive="liquidity",
+        status="calculation",
+        pool_weights=pool_weights,
+        pools = []
+    )
+
+    to_distribute = dict()
+
+    end_height = args.end_height
+
+    if end_height == -1:
+        end_height = get_web3().eth.blockNumber
+
+    start_height = args.start_height
+
+
     for pool in config['pools']:
-        process_pool_history(pool, per_block*pool_weights[pool['address']])
+        rewards, start_height, end_height = process_pool_history(pool, per_block*pool_weights[pool['address']], start_height, end_height)
+        pool_info = {
+            'address': pool['address'],
+            'type': pool.get('type', 'uniswap'),
+            'per_block': per_block*pool_weights[pool['address']],
+            'distribution': rewards,
+            'start': start_height,
+            'end': end_height
+        }
+        for address, amount in rewards.items():
+            to_distribute[address] = to_distribute.get(address, 0) + amount
+        
+        distribution['pools'].append(pool_info)
+
+    if args.act:
+        # distribution['status'] = ''
+        print("Doing distribution")
+        print(distribution)
+        distribution['status'] = 'distribution'
+        transfer_tokens(to_distribute, metadata=distribution)
+
+    create_distribution_tx_post(distribution)
 
 
 def run():

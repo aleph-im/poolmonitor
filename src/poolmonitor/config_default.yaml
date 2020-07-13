@@ -1,11 +1,14 @@
 web3:
   url: None
+  pkey: None
 
 pools:
   - address: '0x583cadd830374bb5c1ec8e1b648e0294cc1e01f1'
     start_height: 10227545
+    type: uniswap
   - address: '0x18e33723fef43a33f9560a8b973d3331e5269fac'
     start_height: 10266042
+    type: uniswap
 
 reward_start: 10402520
 reward_per_block: 2.2
@@ -13,3 +16,7 @@ reward_per_block: 2.2
 token:
   address: '0xc0134b5b924c2fca106efb33c45446c466fbe03e'
   symbol: ALEPH
+
+aleph:
+  channel: 'TEST'
+  api_server: 'https://api2.aleph.im'
