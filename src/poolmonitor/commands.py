@@ -19,6 +19,7 @@ import argparse
 import sys
 import os
 import logging
+import math
 from .settings import config
 from .aleph import create_distribution_tx_post
         
@@ -165,7 +166,15 @@ def main(args):
         print("Doing distribution")
         print(distribution)
         distribution['status'] = 'distribution'
-        transfer_tokens(to_distribute, metadata=distribution)
+
+        max_items = config.get('batch_size', 40)
+
+        distribution_list = list(to_distribute.items())
+
+        for i in range(math.ceil(len(to_distribute) / max_items)):
+            step_items = distribution_list[max_items*i:max_items*(i+1)]
+            print(f"doing batch {i} of {len(step_items)} items")
+            transfer_tokens(dict(step_items), metadata=distribution)
 
     create_distribution_tx_post(distribution)
 

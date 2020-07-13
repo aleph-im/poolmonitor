@@ -83,10 +83,15 @@ def transfer_tokens(targets, metadata=None):
         tx = contract.functions.batchTransfer(
             [w3.toChecksumAddress(addr) for addr in targets.keys()],
             [int(amount*DECIMALS) for amount in targets.values()])
-        gas = tx.estimateGas()
+        # gas = tx.estimateGas({
+        #     'chainId': 1,
+        #     'gasPrice': gas_price,
+        #     'nonce': NONCE,
+        #     })
+        # print(gas)
         tx = tx.buildTransaction({
             'chainId': 1,
-            'gas': gas,
+            'gas': 20000+(30000*len(targets)),
             'gasPrice': gas_price,
             'nonce': NONCE,
             })
@@ -99,15 +104,18 @@ def transfer_tokens(targets, metadata=None):
     except:
         LOGGER.exception("Error packing ethereum TX")
     
-    metadata['success'] = success
-    metadata['target'] = {
+    if 'targets' not in metadata:
+        metadata['targets'] = list()
+    metadata['targets'].append({
+        'success': success,
+        'status': success and 'pending' or 'failed',
         'tx': tx_hash,
         'chain': 'ETH',
         'sender': account.address,
         'targets': targets,
         'total': total,
         'contract_total': str(int(total*DECIMALS))
-    }
+    })
 
     return metadata
 
