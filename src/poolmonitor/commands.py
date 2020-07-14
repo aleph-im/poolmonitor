@@ -21,7 +21,7 @@ import os
 import logging
 import math
 from .settings import config
-from .aleph import create_distribution_tx_post
+from .aleph import create_distribution_tx_post, get_latest_successful_distribution
         
 import hiyapyco
 from pathlib import Path
@@ -77,7 +77,7 @@ def parse_args(args):
         dest="start_height",
         help="Starting height",
         type=int,
-        default=0)
+        default=-1)
     parser.add_argument(
         "-e",
         "--end-height",
@@ -144,6 +144,15 @@ def main(args):
         end_height = get_web3().eth.blockNumber
 
     start_height = args.start_height
+
+    if start_height == -1:
+        last_end_height, dist = get_latest_successful_distribution()
+
+        if last_end_height and dist:
+            start_height = last_end_height + 1
+        
+        else:
+            start_height = 0
 
 
     for pool in config['pools']:
