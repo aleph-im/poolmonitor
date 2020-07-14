@@ -47,7 +47,7 @@ def process_pool_history(pool, per_block, start_height, end_height):
         args = evt_data['args']
         height = evt_data['blockNumber']
         if height > end_height:
-            continue
+            break
 
         if height > reward_start:
             update_weights(last_height, height)
