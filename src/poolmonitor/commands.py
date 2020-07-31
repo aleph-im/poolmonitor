@@ -166,7 +166,8 @@ def main(args):
             'end': end_height
         }
         for address, amount in rewards.items():
-            to_distribute[address] = to_distribute.get(address, 0) + amount
+            if address != "0x0000000000000000000000000000000000000000":
+                to_distribute[address] = to_distribute.get(address, 0) + amount
         
         distribution['pools'].append(pool_info)
 
