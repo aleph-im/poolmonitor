@@ -48,5 +48,8 @@ def get_latest_successful_distribution():
                     current_post = post
                     current_end_height = pool['end']
                     break
-
-    return current_end_height, current_post['content']
+    
+    if current_post is not None:
+        return current_end_height, current_post['content']
+    else:
+        return 0, None
