@@ -13,18 +13,23 @@ from web3.middleware import geth_poa_middleware, local_filter_middleware
 from web3.contract import get_event_data
 from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
+
 def get_contract_abi():
     return json.load(open(os.path.join(Path(__file__).resolve().parent, 'abi/IUniswapV2Pair.json')))['abi']
+
 
 def get_pair(address, web3):
     return web3.eth.contract(address,
                              abi=get_contract_abi())
 
+
 def set_pools():
     web3 = get_web3()
     for pool in config['pools']:
-        pool['contract'] = get_pair(Web3.toChecksumAddress(pool['address']), web3)
-
+        if pool.get('type', 'uniswap') == 'uniswap':
+            pool['contract'] = get_pair(Web3.toChecksumAddress(pool['address']), web3)
+            pool['history_processor'] = process_pool_history
+            pool['weight_processor'] = get_pool_weight
 
 
 def process_pool_history(pool, per_block, start_height, end_height):
@@ -71,11 +76,12 @@ def process_pool_history(pool, per_block, start_height, end_height):
     print("Total", sum(reward_owed.values()))
     return reward_owed, start_height, end_height
 
+
 def get_pool_weight(pool):
     t0, t1, last_height = pool['contract'].functions.getReserves().call()
     if config['token']['address'].lower() == pool['contract'].functions.token0().call().lower():
-        return t0*0.5
+        return t0*2
     elif config['token']['address'].lower() == pool['contract'].functions.token1().call().lower():
-        return t1*0.5
+        return t1*2
     else:
         raise ValueError('Pool not in pair with correct token')

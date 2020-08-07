@@ -115,12 +115,13 @@ def main(args):
     else:
         config.update(hiyapyco.load(default_config_file))
 
-    from .uniswap import set_pools, process_pool_history, get_pool_weight
+    from . import uniswap, balancer
     from .ethereum import get_web3, transfer_tokens
-    set_pools()
+    uniswap.set_pools()
+    balancer.set_pools()
 
     pool_weights = {
-        pool['address'] : get_pool_weight(pool) for pool in config['pools']
+        pool['address'] : pool['weight_processor'](pool) for pool in config['pools']
     }
 
     pool_weights = {
@@ -156,7 +157,10 @@ def main(args):
 
 
     for pool in config['pools']:
-        rewards, start_height, end_height = process_pool_history(pool, per_block*pool_weights[pool['address']], start_height, end_height)
+        rewards, start_height, end_height = \
+            pool['history_processor'](pool,
+                                      per_block*pool_weights[pool['address']],
+                                      start_height, end_height)
         pool_info = {
             'address': pool['address'],
             'type': pool.get('type', 'uniswap'),
