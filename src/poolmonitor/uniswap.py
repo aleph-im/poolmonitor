@@ -45,7 +45,7 @@ def process_pool_history(pool, per_block, start_height, end_height):
     def update_weights(since, current):
         for addr, value in balances.items():
             if value > 0:
-                weights[addr] = weights.get('addr', 0) + (value * (current-since))
+                weights[addr] = weights.get(addr, 0) + (value * (current-since))
 
     for i in get_logs(web3, pool['contract'], pool['start_height'], topics=topic):
         evt_data = get_event_data(web3.codec, abi, i)
