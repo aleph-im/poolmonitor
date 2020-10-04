@@ -65,7 +65,7 @@ def process_pool_history(pool, per_block, start_height, end_height):
     update_weights(last_height, height)
     total_weight = sum(weights.values())
     total_balance = sum([b for b in balances.values() if b > 0])
-    weights = {a: w / total_weight for a, w in weights.items()}
+    weights = {a: w / total_weight for a, w in weights.items() if w > 0}
     print(weights)
     balparts = {a: w / total_balance for a, w in balances.items() if w > 0}
     print(balparts)
