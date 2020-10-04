@@ -71,7 +71,7 @@ def process_pool_history(pool, per_block, start_height, end_height):
     print(balparts)
 
     total_blocks = height - reward_start
-    reward_owed = {a: w*per_block*total_blocks for a, w in balparts.items()}
+    reward_owed = {a: w*per_block*total_blocks for a, w in weights.items()}
     print(reward_owed)
     print("Total", sum(reward_owed.values()))
     return reward_owed, start_height, end_height
