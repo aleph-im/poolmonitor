@@ -91,7 +91,7 @@ def transfer_tokens(targets, metadata=None):
         # print(gas)
         tx = tx.buildTransaction({
             'chainId': 1,
-            'gas': 20000+(30000*len(targets)),
+            'gas': 20000+(20000*len(targets)),
             'gasPrice': gas_price,
             'nonce': NONCE,
             })
