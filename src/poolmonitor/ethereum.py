@@ -13,6 +13,7 @@ from async_lru import alru_cache
 from functools import lru_cache
 from aiocache import cached
 from .settings import config
+import requests
 
 import logging
 LOGGER = logging.getLogger(__name__)
@@ -44,9 +45,14 @@ def get_token_contract(web3):
     tokens = web3.eth.contract(address=web3.toChecksumAddress(config['token']['address']), abi=get_token_contract_abi())
     return tokens
 
-def get_gas_price():
-    w3 = get_web3()
-    return w3.eth.generateGasPrice()
+def get_gas_price(chain_id=1):
+    if chain_id == 1:
+        resp = requests.get('https://www.gasnow.org/api/v3/gas/price?utm_source=alephim')
+        content = resp.json()
+        return content['data']['standard']
+    else:
+        w3 = get_web3()
+        return w3.eth.generateGasPrice()
 
 @lru_cache(maxsize=2)
 def get_account():
