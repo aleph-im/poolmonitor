@@ -11,7 +11,7 @@ pools:
     type: balancer
 
 reward_start: 10940337
-reward_per_block: 1.8
+reward_per_block: 1.5
 batch_size: 200
 
 token:
