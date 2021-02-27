@@ -121,7 +121,7 @@ def main(args):
     balancer.set_pools()
 
     pool_weights = {
-        pool['address'] : pool['weight_processor'](pool) for pool in config['pools']
+        pool['address'] : pool['weight_processor'](pool) * pool.get('weight', 1) for pool in config['pools']
     }
 
     pool_weights = {

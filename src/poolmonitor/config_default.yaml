@@ -9,9 +9,10 @@ pools:
   - address: '0x4C34a687906092ec11CC04DDF30b71e29747Ed76'
     start_height: 10969116
     type: balancer
+    weight: 0.5
 
 reward_start: 10940337
-reward_per_block: 1.5
+reward_per_block: 1.4
 batch_size: 200
 
 token:
