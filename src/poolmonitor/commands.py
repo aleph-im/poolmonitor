@@ -134,7 +134,9 @@ def main(args):
         incentive="liquidity",
         status="calculation",
         pool_weights=pool_weights,
-        pools = []
+        chain=config['web3']['chain_name'],
+        chain_id=config['web3']['chain_id'],
+        pools=[]
     )
 
     to_distribute = dict()

@@ -96,7 +96,7 @@ def transfer_tokens(targets, metadata=None):
         #     })
         # print(gas)
         tx = tx.buildTransaction({
-            'chainId': 1,
+            'chainId': config['web3']['chain_id'],
             'gas': 20000+(20000*len(targets)),
             'gasPrice': gas_price,
             'nonce': NONCE,
@@ -143,14 +143,14 @@ def get_logs(web3, contract, start_height, topics=None):
             yield log
     except ValueError as e:
         # we got an error, let's try the pagination aware version.
-        if e.args[0]['code'] != -32005:
+        if e.args[0]['code'] not in [-32005, -32000]:
             return
 
         last_block = web3.eth.blockNumber
 #         if (start_height < config.ethereum.start_height.value):
 #             start_height = config.ethereum.start_height.value
 
-        end_height = start_height + 6000
+        end_height = start_height + config['web3']['big_block_range']
 
         while True:
             try:
@@ -160,7 +160,7 @@ def get_logs(web3, contract, start_height, topics=None):
                     yield log
 
                 start_height = end_height + 1
-                end_height = start_height + 6000
+                end_height = start_height + config['web3']['big_block_range']
 
                 if start_height > last_block:
                     LOGGER.info("Ending big batch sync")
@@ -168,6 +168,6 @@ def get_logs(web3, contract, start_height, topics=None):
 
             except ValueError as e:
                 if e.args[0]['code'] == -32005:
-                    end_height = start_height + 100
+                    end_height = start_height + config['web3']['small_block_range']
                 else:
                     raise

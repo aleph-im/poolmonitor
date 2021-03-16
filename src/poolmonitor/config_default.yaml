@@ -1,6 +1,10 @@
 web3:
   url: None
   pkey: None
+  small_block_range: 10000
+  big_block_range: 50000
+  chain_id: 1
+  chain_name: 'ETH'
 
 pools:
   - address: '0x29bA3D899E8a819Cf920adAfF53ef1CF31969E66'
