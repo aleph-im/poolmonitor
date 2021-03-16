@@ -73,7 +73,7 @@ def transfer_tokens(targets, metadata=None):
     total = sum(targets.values())
     
     LOGGER.info(f"Preparing transfer of {total} to {addr_count}")
-    gas_price = get_gas_price()
+    gas_price = get_gas_price(config['web3']['chain_id'])
     
     if NONCE is None:
         NONCE = w3.eth.getTransactionCount(account.address)
