@@ -49,7 +49,7 @@ def get_gas_price(chain_id=1):
     if chain_id == 1:
         resp = requests.get('https://www.gasnow.org/api/v3/gas/price?utm_source=alephim')
         content = resp.json()
-        return content['data']['standard']
+        return content['data']['fast']
     else:
         w3 = get_web3()
         return w3.eth.generateGasPrice()
@@ -167,7 +167,7 @@ def get_logs(web3, contract, start_height, topics=None):
                     break
 
             except ValueError as e:
-                if e.args[0]['code'] == -32005:
+                if e.args[0]['code'] in [-32005, -32000, -32603]:
                     end_height = start_height + config['web3']['small_block_range']
                 else:
                     raise
