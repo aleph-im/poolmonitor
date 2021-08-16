@@ -2,6 +2,7 @@ import web3
 from web3.gas_strategies.time_based import medium_gas_price_strategy
 from web3.gas_strategies.rpc import rpc_gas_price_strategy
 from web3.exceptions import TransactionNotFound
+from web3._utils.method_formatters import log_entry_formatter
 import json
 import os
 from pathlib import Path
@@ -9,9 +10,7 @@ from eth_account.messages import defunct_hash_message, encode_defunct
 from eth_account import Account
 from eth_keys import keys
 from hexbytes import HexBytes
-from async_lru import alru_cache
 from functools import lru_cache
-from aiocache import cached
 from .settings import config
 import requests
 
@@ -126,24 +125,52 @@ def transfer_tokens(targets, metadata=None):
     return metadata
 
 
-def get_logs_query(web3, contract, start_height, end_height, topics):
-    logs = web3.eth.getLogs({'address': contract.address,
-                             'fromBlock': start_height,
-                             'toBlock': end_height,
-                             'topics': topics})
-    for log in logs:
-        yield log
+def get_logs_query(web3, contract,
+                   start_height, end_height, topics,
+                   load_mode='rpc'):
+    if load_mode == 'rpc':
+        logs = web3.eth.getLogs({'address': contract.address,
+                                'fromBlock': start_height,
+                                'toBlock': end_height,
+                                'topics': topics})
+        for log in logs:
+            yield log
+    elif load_mode == 'explorer':
+        params = {
+            "module": "logs",
+            "action": "getLogs",
+            "fromBlock": start_height,
+            "toBlock": end_height,
+            "address": contract.address,
+            "apikey": config['web3']['explorer_api_key']
+        }
+        for i, topic in enumerate(topics):
+            params[f"topic{i}"] = topic
+            if i > 0:
+                params[f"topic{i-1}_{i}_opr"] = "and"
+
+        resp = requests.get(
+            "https://api.bscscan.com/api",
+            params=params
+        )
+        for item in resp.json()['result']:
+            item['blockHash'] = None
+            yield log_entry_formatter(item)
+
 
 def get_logs(web3, contract, start_height, topics=None):
-    print(start_height)
+    load_mode = config['web3'].get('mode', 'rpc')
     try:
         logs = get_logs_query(web3, contract,
-                              start_height+1, 'latest', topics=topics)
+                              start_height+1, 'latest', topics=topics,
+                              load_mode=load_mode)
         for log in logs:
             yield log
     except ValueError as e:
         # we got an error, let's try the pagination aware version.
-        if e.args[0]['code'] not in [-32005, -32000]:
+        if (getattr(e, 'args')
+                and len(e.args)
+                and e.args[0]['code'] not in [-32005, -32000, -32603]):
             return
 
         last_block = web3.eth.blockNumber
@@ -155,7 +182,8 @@ def get_logs(web3, contract, start_height, topics=None):
         while True:
             try:
                 logs = get_logs_query(web3, contract,
-                                      start_height, end_height, topics=topics)
+                                      start_height, end_height, topics=topics,
+                                      load_mode=load_mode)
                 for log in logs:
                     yield log
 

@@ -1,4 +1,7 @@
 web3:
+  mode: 'rpc'
+  explorer_api_path: 'https://api.etherscan.com/api'
+  explorer_api_key: ''
   url: None
   pkey: None
   small_block_range: 10000
